@@ -4,17 +4,11 @@ var OPC         = new require('./opc'),
     client      = new OPC('localhost', 7890),
     countdown   = 0,
     numPixels   = 50,
-    prevPixel   = 0,
-    maxEyes     = 3, // maximum number of concurrently active blinkers
-    pixel       = -1,
+    maxEyes     = 12, // maximum number of concurrently active blinkers
     deadTimeMin = 50,
     deadTimeMax = 500,
-    pixelMatrix = [],
     intervalMin = 10,
     intervalMax = 300,
-    stepInterval = 10,
-    lastStep = 0,
-    startMillis = 0,
     colors      = [
         [255, 26, 24], // red
         [255, 163, 23], // orange 1
@@ -34,9 +28,9 @@ var Firefly = function()
     this.m_active = false;  // blinker is in use.
     this.m_deadTime;  // don't re-use this pair immediately
       
-    this.m_pos;  // position of the 'left' eye.  the 'right' eye is m_pos + 1
+    this.m_pos;
       
-    this.m_red;  // RGB components of the color
+    this.m_red;
     this.m_green;
     this.m_blue;
       
@@ -48,23 +42,26 @@ var Firefly = function()
         this.m_pos = pos;
         
         // Pick a random color - skew toward red/orange/yellow part of the spectrum for extra creepyness
-        this.m_red   = getRandomArbitrary(150, 255);
-        this.m_green = Math.random() * 100;
-        this.m_blue  = 0;
+        var colorInt = getRandomArbitrary(0, (colors.length - 1)),
+            color    = colors[ colorInt ];
+    
+        this.m_red   = color[0];
+        this.m_green = color[1]
+        this.m_blue  = color[2];
         
-        this.m_repeats += getRandomArbitrary(1, 3);
+        this.m_repeats = Math.round( Math.random() * 3 );
         
         // set blink speed and deadtime between blinks
-        this.m_increment = getRandomArbitrary(1, 6);
+        this.m_increment = Math.round( Math.random() * 6 );
         this.m_deadTime  = getRandomArbitrary(deadTimeMin, deadTimeMax);
-        console.log(this.m_deadTime);
+
         // Mark as active and start at intensity zero
         this.m_active = true;
-        this.m_intensity = 0;
+        this.m_intensity = 0;   
     };
 
     this.step = function() {
-        // console.log(this.m_active, this.m_deadTime);
+
         if (!this.m_active) { 
             // count down the dead-time when the blink is done
             if (this.m_deadTime > 0) {
@@ -76,39 +73,29 @@ var Firefly = function()
         
         // Increment the intensity
         this.m_intensity += this.m_increment;
-        if (this.m_intensity >= 75) {
+        if (this.m_intensity >= 255) {
             this.m_increment = -this.m_increment;
             this.m_intensity += this.m_increment;
         }
 
         if (this.m_intensity <= 0) {
             // make sure pixels all are off
-            var offTimer = setInterval(this.off, 300);
+            client.setPixel(this.m_pos, 0, 0, 0);
+
             if (--this.m_repeats <= 0) {
                 this.m_active = false;
             } else {
-                this.m_increment = getRandomArbitrary(1, 5);
-                clearInterval(offTimer);
+                this.m_increment = Math.round( Math.random() * 6 );
             }
             return;
         }
         
         // Generate the color at the current intensity level
-        var r =  this.m_red; //Math.round(map(this.m_red, 0, 255, 0, this.m_intensity)),
-            g =  0; //Math.round(map(this.m_green, 0, 255, 0, this.m_intensity)),
-            b =  0; //Math.round(map(this.m_blue, 0, 255, 0, this.m_intensity));
+        var r =  Math.round(map(this.m_red, 0, 255, 0, this.m_intensity)),
+            g =  Math.round(map(this.m_green, 0, 255, 0, this.m_intensity)),
+            b =  Math.round(map(this.m_blue, 0, 255, 0, this.m_intensity));
          
-        // Write to both 'eyes'
-        client.setPixel(this.m_pos, r, 0, 0);
-        client.setPixel(this.m_pos + 1, r, 0, 0);
-        client.writePixels();
-    }
-
-
-    this.off = function() {
-        client.setPixel(m_pos, 0, 0, 0);
-        client.setPixel(m_pos + 1, 0, 0, 0);
-        client.writePixels();
+        client.setPixel(this.m_pos, r, g, b);
     }
 }
 
@@ -141,55 +128,50 @@ function getRandomArbitrary(min, max) {
 function setup()
 {
     countdown = 0;
-    var d = new Date(),
-        n = d.getMilliseconds();    
-    startMillis = n;
 
     for (i = 0; i < maxEyes; i++) {
         blinkers[i] = new Firefly();
     }
-    
-    client._reconnect();
-    setInterval(loop, 500);
+        
+    setInterval(loop, 50);
 }
 
 
 function loop()
 {
-    if (millis() - lastStep > stepInterval) {
-    // console.log(millis(), lastStep, stepInterval, (millis() - lastStep > stepInterval));
-        lastStep = millis();
-        --countdown;
-        for(var i = 0; i < maxEyes; i++) {
-          // Only start a blink if the countdown is expired and there is an available blinker
-          if ((countdown <= 0) && (blinkers[i].m_active == false)) {
-            newPos = getRandomArbitrary(0, numPixels / 2) * 2;
+    for (var i = 0; i < numPixels; i++) {
+        client.setPixel(i, 0, 0, 0);
+    }
+    client.writePixels();
 
+    --countdown;
+    for(var i = 0; i < maxEyes; i++) {
+        // Only start a blink if the countdown is expired and there is an available blinker
+        if ((countdown <= 0) && (blinkers[i].m_active == false)) {
+            newPos = getRandomArbitrary(0, numPixels / 2) * 2;
+            console.log(newPos);
             for(var j = 0; j < maxEyes; j++) {
               // avoid active or recently active pixels
-              if ((blinkers[j].m_deadTime > 0) && (Math.abs(newPos - blinkers[j].m_pos) < 4)) {
-                console.log(" Collision -");
-                console.log(newPos);
-                newPos = -1;  // collision - do not start
-                break;
-              }
+                if ((blinkers[j].m_deadTime > 0) && (Math.abs(newPos - blinkers[j].m_pos) < 4)) {
+                    console.log(" Collision -");
+                    newPos = -1;  // collision - do not start
+                    break;
+                }
             }
 
             // if we have a valid pixel to start with...
             if (newPos >= 0) {
                 console.log(i);
                 console.log(" Activate - ");
-                console.log(newPos);
                 blinkers[i].StartBlink(newPos);  
                 countdown = getRandomArbitrary(intervalMin, intervalMax);  // random delay to next start
             }
-          }
-          // step all the state machines
-           blinkers[i].step();
         }
-        // update the strip
-        client.writePixels();
+        // step all the state machines
+        blinkers[i].step();
     }
+    // update the strip
+    client.writePixels();
 }
 
 setup();

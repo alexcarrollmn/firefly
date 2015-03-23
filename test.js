@@ -4,20 +4,46 @@ var OPC         = new require('./opc'),
 
 var millis = new Date().getMilliseconds();
 
-function setup()
+function randomColors()
 {
     var setupMillis = new Date().getMilliseconds();
     client.setPixelCount(numPixels);
     // turn them all off
     for (var i = 0; i < numPixels; i++ ) {
-        client.setPixel(i, 255, 128, 0);
+        var r = clamp(Math.round( ((128 + setupMillis * 0.002) + 255) * Math.random() ) * 0.75, 255),
+            g = clamp(Math.round( ((128 + setupMillis * 0.002) + 255) * Math.random() ) * 0.75, 255),
+            b = clamp(Math.round( ((128 + setupMillis * 0.002) + 255) * Math.random() ) * 0.75, 255);
+        console.log("red: " + r, "green: " + g, "blue: " + b);
+        client.setPixel(i, r, g, b);
     }
 
     client.writePixels();
-
-    console.log(setupMillis);
-    if (setupMillis > 300)
-        clearInterval(timer);
 }
 
-var timer = setInterval(setup, 300);
+function blinkOne()
+{
+    // var setupMillis = new Date().getMilliseconds();
+    client.setPixelCount(numPixels);
+
+    // turn off all pixels
+    for (var i = 0; i < numPixels; i++) {
+        client.setPixel(i, 0, 0, 0);
+    }
+    client.writePixels();
+
+    // var timer = setInterval(function(){
+        client.setPixel(Math.round(Math.random() * numPixels), 128, 0, 0);
+        client.writePixels();
+    // }, 500);
+}
+
+function clamp(value, max)
+{
+    if (value > max) {
+        return max;
+    }
+
+    return value;
+}
+
+var timer = setInterval(blinkOne, 1000);
