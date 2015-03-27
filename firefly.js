@@ -15,18 +15,41 @@ var OPC         = new require('./opc'),
         [102, 184, 255] // blue
     ];
 
+var Firefly = function()
+{
+    this.interval   = tools.getRandomArbitrary(3000, 20000);
+    this.blinks     = tools.getRandomArbitrary(1, 10);
+    this.pixel      = Math.round( Math.random() * numPixels);
+    this.colorIndex = Math.round( Math.random() * (colors.length - 1));
+    this.parentTimer = null;
+    this.blinkTimer  = null;
+
+    /**
+     * Turn off all pixels
+     */
+    this.off = function() {
+        //turn off all pixels
+        for (var i = 0; i < numPixels; i++) {
+            client.setPixel(i, 0, 0, 0);
+        }
+        client.writePixels();
+    };
+
+
+    /**
+     * Brief pause before next pixel
+     */
+    this.pause = function() {
+        // pause
+        setTimeout(function(){}, 500);
+    }
+};
+
 function flash()
 {
-    var interval = tools.getRandomArbitrary(3000, 20000);
     if (parent) {
         clearInterval(parent);
     }
-
-    //turn off all pixels
-    for (var i = 0; i < numPixels; i++) {
-        client.setPixel(i, 0, 0, 0);
-    }
-    client.writePixels();
 
     var c = 0,
         limit = tools.getRandomArbitrary(2, 10),
