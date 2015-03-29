@@ -15,34 +15,40 @@ var OPC         = new require('./opc'),
         [102, 184, 255] // blue
     ];
 
+function clearPixels()
+{
+    //turn off all pixels
+    for (var i = 0; i < numPixels; i++) {
+        client.setPixel(i, 0, 0, 0);
+    }
+    client.writePixels();    
+}
+
 function flash()
 {
+    clearPixels();
+
     var interval = tools.getRandomArbitrary(3000, 20000);
     if (parent) {
         clearInterval(parent);
     }
 
-    //turn off all pixels
-    for (var i = 0; i < numPixels; i++) {
-        client.setPixel(i, 0, 0, 0);
-    }
-    client.writePixels();
 
     var c = 0,
         limit = tools.getRandomArbitrary(2, 10),
         pixel = Math.round( Math.random() * numPixels),
         colorIndex = Math.round( Math.random() * (colors.length - 1)),
+        flashTimerInterval = tools.getRandomArbitrary(500, 1000),
         r          = colors[colorIndex][0],
         g          = colors[colorIndex][1],
         b          = colors[colorIndex][2];
 
-    console.log((interval / 1000).toString() + " secs | ", limit.toString() + " flashes | ", "Pos: " + pixel);
+
     var flashTimer = setInterval(function(){
         if (c > limit) {
             clearInterval(flashTimer);
             c = 0;
         }
-
         if (c % 2) {
             client.setPixel(pixel, r, g, b);
         } else {
@@ -51,12 +57,19 @@ function flash()
 
         client.writePixels();
         c++;
-    }, tools.getRandomArbitrary(100, 500));
+    }, flashTimerInterval);
 
     // pause
     setTimeout(function(){}, 500);
 
     // start a new timer
     parent = setInterval(flash, interval);
+    console.log(
+        (interval / 1000).toString() + " secs | ",
+        "Flash Interval: " + (flashTimerInterval / 1000).toString() + " secs | ", 
+        Math.floor(limit / 2).toString() + " flashes | ", 
+        "Pos: " + pixel
+    );
 }
+clearPixels();
 var parent = setInterval(flash, 3000);
