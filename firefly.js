@@ -16,18 +16,23 @@ var OPC         = new require('./opc'),
     ],
     self = null;
 
+
+/**
+ * Firefly object
+ *
+ * @param {number} pos Pixel position
+ * @constructor
+ */
 var Firefly = function(pos)
 {
     self = this;
     this.off();
 
-    this.interval      = tools.getRandomArbitrary(3000, 20000);
     this.blinkInterval = tools.getRandomArbitrary(100, 500);
     this.blinks        = tools.getRandomArbitrary(1, 10);
     this.pixel         = pos;
     this.count         = 0;
     this.color         = colors[ Math.round( Math.random() * (colors.length - 1)) ];
-    this.blinkTimer    = setInterval(this.flash, this.blinkInterval);
 
 };
 
@@ -45,11 +50,19 @@ Firefly.prototype.off = function() {
 
 
 /**
+ * Start blink timer
+ */
+Firefly.prototype.start = function() {
+    this.blinkTimer    = setInterval(this.flash, this.blinkInterval);
+};
+
+
+/**
  * Flash the pixel
  */
 Firefly.prototype.flash = function() {
-    if (self.count > self.limit) {
-        clearInterval(this.blinkTimer);
+    if (self.count > self.blinks) {
+        clearInterval(self.blinkTimer);
         self.count = 0;
     }
 
@@ -76,14 +89,17 @@ Firefly.prototype.pause = function() {
     setTimeout(function(){}, 500);
 };
 
+
+/**
+ * Output basic debugging information
+ */
 Firefly.prototype.debug = function()
 {
     console.log(
-        // (interval / 1000).toString() + " secs | ",
-        "Flash Interval: " + (this.blinkInterval / 1000).toString() + " secs | ", 
-        Math.floor(this.limit / 2).toString() + " flashes | ", 
-        "Pos: " + this.pos
-    );    
-}
+        "Flash Interval: " + (this.blinkInterval / 1000).toString() + " secs | ",
+        Math.floor(this.blinks / 2).toString() + " flashes | ",
+        "Pos: " + this.pixel
+    );
+};
 
 module.exports = Firefly;
