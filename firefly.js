@@ -13,63 +13,92 @@ var OPC         = new require('./opc'),
         [190, 253, 15], // green 2
         [199, 229, 255], // blue
         [102, 184, 255] // blue
-    ];
+    ],
+    self = null;
 
-function clearPixels()
+/**
+ * Firefly object
+ *
+ * @param {number} pos Pixel position
+ * @constructor
+ */
+var Firefly = function(pos)
 {
+    self = this;
+    this.off();
+
+    this.blinkInterval = tools.getRandomArbitrary(100, 500);
+    this.blinks        = tools.getRandomArbitrary(1, 10);
+    this.pixel         = pos;
+    this.count         = 0;
+    this.color         = colors[ Math.round( Math.random() * (colors.length - 1)) ];
+
+};
+
+
+/**
+ * Turn off all pixels
+ */
+Firefly.prototype.off = function() {
     //turn off all pixels
     for (var i = 0; i < numPixels; i++) {
         client.setPixel(i, 0, 0, 0);
     }
-    client.writePixels();    
-}
+    client.writePixels();
+};
 
-function flash()
-{
-    clearPixels();
 
-    var interval = tools.getRandomArbitrary(3000, 20000);
-    if (parent) {
-        clearInterval(parent);
+/**
+ * Start blink timer
+ */
+Firefly.prototype.start = function() {
+    this.blinkTimer    = setInterval(this.flash, this.blinkInterval);
+};
+
+
+/**
+ * Flash the pixel
+ */
+Firefly.prototype.flash = function() {
+    if (self.count > self.blinks) {
+        clearInterval(self.blinkTimer);
+        self.count = 0;
     }
 
+    var r = self.color[0],
+        g = self.color[1],
+        b = self.color[2];
 
-    var c = 0,
-        limit = tools.getRandomArbitrary(2, 10),
-        pixel = Math.round( Math.random() * numPixels),
-        colorIndex = Math.round( Math.random() * (colors.length - 1)),
-        flashTimerInterval = tools.getRandomArbitrary(500, 1000),
-        r          = colors[colorIndex][0],
-        g          = colors[colorIndex][1],
-        b          = colors[colorIndex][2];
+    if (self.count % 2) {
+        client.setPixel(self.pixel, r, g, b);
+    } else {
+        client.setPixel(self.pixel, 0, 0, 0);
+    }
 
+    client.writePixels();
+    self.count++;
+};
 
-    var flashTimer = setInterval(function(){
-        if (c > limit) {
-            clearInterval(flashTimer);
-            c = 0;
-        }
-        if (c % 2) {
-            client.setPixel(pixel, r, g, b);
-        } else {
-            client.setPixel(pixel, 0, 0, 0);
-        }
-
-        client.writePixels();
-        c++;
-    }, flashTimerInterval);
-
+/**
+ * Brief pause before next pixel
+ */
+Firefly.prototype.pause = function() {
     // pause
     setTimeout(function(){}, 500);
+};
 
-    // start a new timer
-    parent = setInterval(flash, interval);
+
+/**
+ * Output basic debugging information
+ */
+Firefly.prototype.debug = function()
+{
     console.log(
-        (interval / 1000).toString() + " secs | ",
-        "Flash Interval: " + (flashTimerInterval / 1000).toString() + " secs | ", 
-        Math.floor(limit / 2).toString() + " flashes | ", 
-        "Pos: " + pixel
+        "Flash Interval: " + (this.blinkInterval / 1000).toString() + " secs | ",
+        Math.floor(this.blinks / 2).toString() + " flashes | ",
+        "Pos: " + this.pixel
     );
-}
-clearPixels();
-var parent = setInterval(flash, 3000);
+};
+
+
+module.exports = Firefly;
