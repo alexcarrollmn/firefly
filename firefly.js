@@ -13,8 +13,7 @@ var OPC         = new require('./opc'),
         [190, 253, 15], // green 2
         [199, 229, 255], // blue
         [102, 184, 255] // blue
-    ],
-    self = null;
+    ];
 
 /**
  * Firefly object
@@ -24,7 +23,6 @@ var OPC         = new require('./opc'),
  */
 var Firefly = function(pos)
 {
-    self = this;
     this.off();
 
     this.blinkInterval = tools.getRandomArbitrary(100, 500);
@@ -52,7 +50,7 @@ Firefly.prototype.off = function() {
  * Start blink timer
  */
 Firefly.prototype.start = function() {
-    this.blinkTimer    = setInterval(this.flash, this.blinkInterval);
+    this.blinkTimer    = setInterval(this.flash.bind(this), this.blinkInterval);
 };
 
 
@@ -60,23 +58,23 @@ Firefly.prototype.start = function() {
  * Flash the pixel
  */
 Firefly.prototype.flash = function() {
-    if (self.count > self.blinks) {
-        clearInterval(self.blinkTimer);
-        self.count = 0;
+    if (this.count > this.blinks) {
+        clearInterval(this.blinkTimer);
+        this.count = 0;
     }
 
-    var r = self.color[0],
-        g = self.color[1],
-        b = self.color[2];
+    var r = this.color[0],
+        g = this.color[1],
+        b = this.color[2];
 
-    if (self.count % 2) {
-        client.setPixel(self.pixel, r, g, b);
+    if (this.count % 2) {
+        client.setPixel(this.pixel, r, g, b);
     } else {
-        client.setPixel(self.pixel, 0, 0, 0);
+        client.setPixel(this.pixel, 0, 0, 0);
     }
 
     client.writePixels();
-    self.count++;
+    this.count++;
 };
 
 /**
