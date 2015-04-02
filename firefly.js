@@ -16,6 +16,10 @@ var OPC         = new require('./opc'),
     ];
 
 /**
+ * @todo Add getters/setters for parent interval and colors
+ */
+
+/**
  * Firefly object
  *
  * @param {number} pos Pixel position
@@ -24,7 +28,11 @@ var OPC         = new require('./opc'),
 var Firefly = function(pos)
 {
     this.off();
-
+    
+    if (typeof(this.parentInterval) === 'undefined') {
+        this.parentInterval = 1000; // baseline interval
+    }
+    
     this.blinkInterval = tools.getRandomArbitrary(100, 500);
     this.blinks        = tools.getRandomArbitrary(1, 10);
     this.pixel         = pos;
@@ -92,9 +100,10 @@ Firefly.prototype.pause = function() {
 Firefly.prototype.debug = function()
 {
     console.log(
+        "Parent Interval" + (this.parentInterval / 1000).toString() + " secs | ",
         "Flash Interval: " + (this.blinkInterval / 1000).toString() + " secs | ",
-        Math.floor(this.blinks / 2).toString() + " flashes | ",
-        "Pos: " + this.pixel
+        "Flash Rate: " + Math.round(this.blinks / 2).toString() + " flashes | ",
+        "Pixel: " + this.pixel
     );
 };
 
